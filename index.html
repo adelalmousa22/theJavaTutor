@@ -67,12 +67,23 @@
             border-radius: 25px;
             transition: all 0.3s ease;
             cursor: pointer;
+            position: relative;
         }
 
         .nav-link:hover {
             background: #4f46e5;
             color: white;
             transform: translateY(-2px);
+        }
+
+        .inbox-link {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            color: white !important;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .inbox-link:hover {
+            background: linear-gradient(45deg, #ff5252, #ff7979);
         }
 
         /* Main Content */
@@ -295,7 +306,7 @@
             font-size: 1.1rem;
         }
 
-        .form-input, .form-select {
+        .form-input, .form-select, .form-textarea {
             width: 100%;
             padding: 1rem;
             border: none;
@@ -303,9 +314,15 @@
             font-size: 1rem;
             background: rgba(255, 255, 255, 0.9);
             transition: all 0.3s ease;
+            font-family: inherit;
         }
 
-        .form-input:focus, .form-select:focus {
+        .form-textarea {
+            height: 120px;
+            resize: vertical;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
             outline: none;
             background: white;
             transform: scale(1.02);
@@ -385,7 +402,7 @@
             }
         }
 
-        /* Responsive Design */
+        /* Mobile Responsive */
         @media (max-width: 768px) {
             .hero h1 {
                 font-size: 2.5rem;
@@ -431,12 +448,13 @@
     <header class="header" id="header">
         <div class="nav-container">
             <a href="#" class="logo">☕ JavaTutor</a>
-            <ul class="nav-menu">
-                <li><a href="#" class="nav-link" data-section="hero">Home</a></li>
-                <li><a href="#" class="nav-link" data-section="learn">What You'll Learn</a></li>
-                <li><a href="#" class="nav-link" data-section="how">How It Works</a></li>
-                <li><a href="#" class="nav-link" data-section="contact">Contact</a></li>
-            </ul>
+            <nav class="nav-menu">
+                <a href="#" class="nav-link" data-section="hero">Home</a>
+                <a href="#" class="nav-link" data-section="learn">What You'll Learn</a>
+                <a href="#" class="nav-link" data-section="how">How It Works</a>
+                <a href="#" class="nav-link" data-section="contact">Contact</a>
+                <a href="#" class="nav-link inbox-link" id="inboxLink">📬 Inbox</a>
+            </nav>
         </div>
     </header>
 
@@ -547,12 +565,28 @@
                             </div>
                             
                             <div class="form-group">
+                                <label for="experience" class="form-label">Programming Experience</label>
+                                <select id="experience" name="experience" class="form-select" required>
+                                    <option value="">Select your experience level</option>
+                                    <option value="complete-beginner">Complete Beginner</option>
+                                    <option value="some-basics">Know Some Basics</option>
+                                    <option value="other-languages">Other Languages, New to Java</option>
+                                    <option value="struggling-student">Struggling Student</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="goals" class="form-label">Learning Goals</label>
+                                <textarea id="goals" name="goals" class="form-textarea" placeholder="Tell me about your learning goals, current challenges, or what you'd like to focus on..." required></textarea>
+                            </div>
+                            
+                            <div class="form-group">
                                 <label for="contactMethod" class="form-label">Preferred Contact Method</label>
                                 <select id="contactMethod" name="contactMethod" class="form-select" required>
                                     <option value="">Select preferred method</option>
                                     <option value="email">Email</option>
                                     <option value="phone">Phone</option>
-                                    <option value="text">Text</option>
+                                    <option value="text">Text Message</option>
                                 </select>
                             </div>
                             
@@ -562,7 +596,7 @@
                     
                     <div class="thank-you" id="thankYou">
                         <h3 class="thank-you-title">✅ Thank You!</h3>
-                        <p class="thank-you-text">Thank you for your interest! I will get back to you as soon as possible to schedule your first Java tutoring session.</p>
+                        <p class="thank-you-text">Thank you for your interest! I will get back to you as soon as possible to schedule your first Java tutoring session. Please check your email for confirmation.</p>
                     </div>
                 </div>
             </section>
@@ -570,28 +604,77 @@
     </main>
 
     <script>
+        // Inquiry Storage System
+        class InquiryManager {
+            constructor() {
+                this.inquiries = this.loadInquiries();
+                this.nextId = this.getNextId();
+            }
+
+            loadInquiries() {
+                const stored = JSON.parse(sessionStorage.getItem('javatutor_inquiries') || '[]');
+                return stored;
+            }
+
+            saveInquiries() {
+                sessionStorage.setItem('javatutor_inquiries', JSON.stringify(this.inquiries));
+            }
+
+            getNextId() {
+                return this.inquiries.length > 0 ? Math.max(...this.inquiries.map(i => i.id)) + 1 : 1;
+            }
+
+            addInquiry(inquiryData) {
+                const inquiry = {
+                    id: this.nextId++,
+                    ...inquiryData,
+                    status: 'new',
+                    timestamp: new Date().toISOString(),
+                    dateFormatted: new Date().toLocaleString()
+                };
+                
+                this.inquiries.unshift(inquiry); // Add to beginning
+                this.saveInquiries();
+                return inquiry;
+            }
+
+            getInquiries() {
+                return this.inquiries;
+            }
+
+            updateInquiryStatus(id, status) {
+                const inquiry = this.inquiries.find(i => i.id === id);
+                if (inquiry) {
+                    inquiry.status = status;
+                    this.saveInquiries();
+                }
+            }
+
+            deleteInquiry(id) {
+                this.inquiries = this.inquiries.filter(i => i.id !== id);
+                this.saveInquiries();
+            }
+        }
+
+        // Initialize inquiry manager
+        const inquiryManager = new InquiryManager();
+
         // Initialize the website
         function initializeWebsite() {
             console.log('Initializing JavaTutor website...');
             
-            // Set up smooth scrolling for navigation
             setupNavigation();
-            
-            // Set up form submission
             setupFormSubmission();
-            
-            // Set up header scroll effect
             setupHeaderEffect();
-            
-            // Set up CTA buttons
             setupCTAButtons();
+            setupInboxLink();
             
             console.log('Website initialized successfully!');
         }
 
         // Navigation setup
         function setupNavigation() {
-            const navLinks = document.querySelectorAll('.nav-link');
+            const navLinks = document.querySelectorAll('.nav-link[data-section]');
             
             navLinks.forEach(function(link) {
                 link.addEventListener('click', function(e) {
@@ -616,16 +699,206 @@
             const consultButton = document.getElementById('consultButton');
             
             if (heroButton) {
-                heroButton.addEventListener('click', function() {
-                    scrollToContact();
-                });
+                heroButton.addEventListener('click', scrollToContact);
             }
             
             if (consultButton) {
-                consultButton.addEventListener('click', function() {
-                    scrollToContact();
+                consultButton.addEventListener('click', scrollToContact);
+            }
+        }
+
+        // Inbox link setup
+        function setupInboxLink() {
+            const inboxLink = document.getElementById('inboxLink');
+            if (inboxLink) {
+                inboxLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    openInboxWindow();
                 });
             }
+        }
+
+        // Open inbox in new window
+        function openInboxWindow() {
+            const inboxWindow = window.open('', 'JavaTutorInbox', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+            
+            if (!inboxWindow) {
+                alert('Please allow popups to access the inbox system');
+                return;
+            }
+
+            // Generate inbox HTML
+            const inboxHTML = generateInboxHTML();
+            inboxWindow.document.write(inboxHTML);
+            inboxWindow.document.close();
+        }
+
+        // Generate inbox HTML
+        function generateInboxHTML() {
+            const inquiries = inquiryManager.getInquiries();
+            
+            return `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>JavaTutor - Inquiry Inbox</title>
+                    <style>
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+                        .header { background: #4f46e5; color: white; padding: 1rem; }
+                        .header h1 { font-size: 1.8rem; }
+                        .stats { display: flex; gap: 1rem; margin: 1rem; }
+                        .stat-card { background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex: 1; }
+                        .stat-number { font-size: 2rem; font-weight: bold; color: #4f46e5; }
+                        .stat-label { color: #666; font-size: 0.9rem; }
+                        .controls { margin: 1rem; display: flex; gap: 1rem; align-items: center; }
+                        .btn { padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; }
+                        .btn-primary { background: #4f46e5; color: white; }
+                        .btn-success { background: #10b981; color: white; }
+                        .btn-danger { background: #ef4444; color: white; }
+                        .btn-small { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+                        .inquiries-container { margin: 1rem; }
+                        .inquiry-card { background: white; margin-bottom: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }
+                        .inquiry-header { padding: 1rem; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
+                        .inquiry-meta { display: flex; gap: 1rem; align-items: center; }
+                        .status-badge { padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+                        .status-new { background: #dbeafe; color: #1e40af; }
+                        .status-contacted { background: #fef3c7; color: #92400e; }
+                        .status-scheduled { background: #d1fae5; color: #065f46; }
+                        .status-completed { background: #e5e7eb; color: #374151; }
+                        .inquiry-body { padding: 1rem; }
+                        .inquiry-field { margin-bottom: 0.5rem; }
+                        .field-label { font-weight: 600; color: #374151; }
+                        .field-value { color: #6b7280; margin-left: 0.5rem; }
+                        .inquiry-actions { padding: 1rem; background: #f8fafc; display: flex; gap: 0.5rem; }
+                        .empty-state { text-align: center; padding: 3rem; color: #6b7280; }
+                        .refresh-note { background: #fef3c7; padding: 1rem; margin: 1rem; border-radius: 8px; color: #92400e; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>📬 JavaTutor Inquiry Inbox</h1>
+                    </div>
+                    
+                    <div class="stats">
+                        <div class="stat-card">
+                            <div class="stat-number">${inquiries.length}</div>
+                            <div class="stat-label">Total Inquiries</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${inquiries.filter(i => i.status === 'new').length}</div>
+                            <div class="stat-label">New Inquiries</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${inquiries.filter(i => i.status === 'contacted').length}</div>
+                            <div class="stat-label">Contacted</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${inquiries.filter(i => i.status === 'scheduled').length}</div>
+                            <div class="stat-label">Scheduled</div>
+                        </div>
+                    </div>
+                    
+                    <div class="refresh-note">
+                        💡 <strong>Note:</strong> This inbox shows inquiries from your current session. To maintain inquiries permanently, you would need to integrate with a backend service or database.
+                    </div>
+                    
+                    <div class="controls">
+                        <button class="btn btn-primary" onclick="refreshInbox()">🔄 Refresh</button>
+                        <button class="btn btn-danger" onclick="clearAllInquiries()">🗑️ Clear All</button>
+                        <span style="margin-left: auto; color: #6b7280;">Last updated: ${new Date().toLocaleString()}</span>
+                    </div>
+                    
+                    <div class="inquiries-container">
+                        ${inquiries.length === 0 ? `
+                            <div class="empty-state">
+                                <h3>No inquiries yet</h3>
+                                <p>When students submit the contact form, their inquiries will appear here.</p>
+                            </div>
+                        ` : inquiries.map(inquiry => `
+                            <div class="inquiry-card">
+                                <div class="inquiry-header">
+                                    <div class="inquiry-meta">
+                                        <strong>#${inquiry.id}</strong>
+                                        <span class="status-badge status-${inquiry.status}">${inquiry.status.toUpperCase()}</span>
+                                        <span style="color: #6b7280;">${inquiry.dateFormatted}</span>
+                                    </div>
+                                    <div class="inquiry-actions">
+                                        <button class="btn btn-success btn-small" onclick="updateStatus(${inquiry.id}, 'contacted')">Mark Contacted</button>
+                                        <button class="btn btn-primary btn-small" onclick="updateStatus(${inquiry.id}, 'scheduled')">Mark Scheduled</button>
+                                        <button class="btn btn-danger btn-small" onclick="deleteInquiry(${inquiry.id})">Delete</button>
+                                    </div>
+                                </div>
+                                <div class="inquiry-body">
+                                    <div class="inquiry-field">
+                                        <span class="field-label">Name:</span>
+                                        <span class="field-value">${inquiry.name}</span>
+                                    </div>
+                                    <div class="inquiry-field">
+                                        <span class="field-label">Email:</span>
+                                        <span class="field-value"><a href="mailto:${inquiry.email}">${inquiry.email}</a></span>
+                                    </div>
+                                    <div class="inquiry-field">
+                                        <span class="field-label">Phone:</span>
+                                        <span class="field-value"><a href="tel:${inquiry.phone}">${inquiry.phone}</a></span>
+                                    </div>
+                                    <div class="inquiry-field">
+                                        <span class="field-label">Experience:</span>
+                                        <span class="field-value">${inquiry.experience}</span>
+                                    </div>
+                                    <div class="inquiry-field">
+                                        <span class="field-label">Goals:</span>
+                                        <span class="field-value">${inquiry.goals}</span>
+                                    </div>
+                                    <div class="inquiry-field">
+                                        <span class="field-label">Preferred Contact:</span>
+                                        <span class="field-value">${inquiry.contactMethod}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <script>
+                        // Inbox management functions
+                        function refreshInbox() {
+                            window.location.reload();
+                        }
+                        
+                        function updateStatus(id, status) {
+                            if (window.opener && window.opener.inquiryManager) {
+                                window.opener.inquiryManager.updateInquiryStatus(id, status);
+                                refreshInbox();
+                            }
+                        }
+                        
+                        function deleteInquiry(id) {
+                            if (confirm('Are you sure you want to delete this inquiry?')) {
+                                if (window.opener && window.opener.inquiryManager) {
+                                    window.opener.inquiryManager.deleteInquiry(id);
+                                    refreshInbox();
+                                }
+                            }
+                        }
+                        
+                        function clearAllInquiries() {
+                            if (confirm('Are you sure you want to delete ALL inquiries? This cannot be undone.')) {
+                                if (window.opener && window.opener.inquiryManager) {
+                                    window.opener.inquiryManager.inquiries = [];
+                                    window.opener.inquiryManager.saveInquiries();
+                                    refreshInbox();
+                                }
+                            }
+                        }
+                        
+                        // Auto-refresh every 30 seconds
+                        setInterval(refreshInbox, 30000);
+                    </script>
+                </body>
+                </html>
+            `;
         }
 
         // Scroll to contact section
@@ -665,14 +938,19 @@
                     name: document.getElementById('fullName').value,
                     email: document.getElementById('email').value,
                     phone: document.getElementById('phone').value,
-                    contactMethod: document.getElementById('contactMethod').value,
-                    timestamp: new Date().toLocaleString()
+                    experience: document.getElementById('experience').value,
+                    goals: document.getElementById('goals').value,
+                    contactMethod: document.getElementById('contactMethod').value
                 };
                 
                 console.log('Form data collected:', formData);
                 
                 // Simulate form processing
                 setTimeout(function() {
+                    // Add to inquiry system
+                    const inquiry = inquiryManager.addInquiry(formData);
+                    console.log('Inquiry added:', inquiry);
+                    
                     // Clear form
                     form.reset();
                     
@@ -682,14 +960,14 @@
                     
                     console.log('Thank you message displayed');
                     
-                    // Reset after 10 seconds
+                    // Reset after 8 seconds
                     setTimeout(function() {
                         thankYou.style.display = 'none';
                         formContainer.style.display = 'block';
                         submitBtn.disabled = false;
                         submitBtn.textContent = 'Start Learning';
                         console.log('Form reset and ready for next submission');
-                    }, 10000);
+                    }, 8000);
                     
                 }, 1500);
             });
@@ -712,6 +990,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             initializeWebsite();
         });
-    </script>
-</body>
-</html>
+
+        // Make inquiryManager available globally for inbox window
+        window.inquiryManager = inquiryManager;
