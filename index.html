@@ -75,6 +75,22 @@
             transform: translateY(-2px);
         }
 
+        .admin-link {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            color: white !important;
+            padding: 0.7rem 1.5rem !important;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .admin-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+
         /* Main Content */
         .main-content {
             margin-top: 80px;
@@ -362,6 +378,37 @@
             line-height: 1.8;
         }
 
+        /* Status Indicator */
+        .status-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 1.5rem;
+            border-radius: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.offline {
+            background: #ef4444;
+            animation: none;
+        }
+
         /* Animations */
         @keyframes slideInUp {
             from {
@@ -383,6 +430,12 @@
                 opacity: 1;
                 transform: scale(1);
             }
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
 
         /* Responsive Design */
@@ -423,6 +476,13 @@
             .thank-you {
                 padding: 2rem;
             }
+
+            .status-indicator {
+                bottom: 10px;
+                right: 10px;
+                padding: 0.8rem 1rem;
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
@@ -436,6 +496,7 @@
                 <li><a href="#" class="nav-link" data-section="learn">What You'll Learn</a></li>
                 <li><a href="#" class="nav-link" data-section="how">How It Works</a></li>
                 <li><a href="#" class="nav-link" data-section="contact">Contact</a></li>
+                <li><a href="#" class="admin-link" id="adminLink">📋 Admin Dashboard</a></li>
             </ul>
         </div>
     </header>
@@ -569,7 +630,17 @@
         </div>
     </main>
 
+    <!-- Status Indicator -->
+    <div class="status-indicator" id="statusIndicator">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">System Online</span>
+    </div>
+
     <script>
+        // Global variables
+        let adminWindow = null;
+        let isAdminOpen = false;
+
         // Initialize the website
         function initializeWebsite() {
             console.log('Initializing JavaTutor website...');
@@ -577,7 +648,7 @@
             // Set up smooth scrolling for navigation
             setupNavigation();
             
-            // Set up form submission
+            // Set up form submission with admin integration
             setupFormSubmission();
             
             // Set up header scroll effect
@@ -585,6 +656,12 @@
             
             // Set up CTA buttons
             setupCTAButtons();
+            
+            // Set up admin dashboard integration
+            setupAdminIntegration();
+            
+            // Update status indicator
+            updateSystemStatus();
             
             console.log('Website initialized successfully!');
         }
@@ -640,7 +717,88 @@
             }
         }
 
-        // Form submission setup
+        // Admin integration setup
+        function setupAdminIntegration() {
+            const adminLink = document.getElementById('adminLink');
+            
+            if (adminLink) {
+                adminLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    openAdminDashboard();
+                });
+            }
+
+            // Listen for admin window closing
+            window.addEventListener('beforeunload', function() {
+                if (adminWindow && !adminWindow.closed) {
+                    adminWindow.close();
+                }
+            });
+
+            // Check if admin window is still open periodically
+            setInterval(checkAdminWindow, 1000);
+        }
+
+        // Open admin dashboard
+        function openAdminDashboard() {
+            if (adminWindow && !adminWindow.closed) {
+                // If admin window is already open, focus on it
+                adminWindow.focus();
+                return;
+            }
+
+            // Create admin dashboard HTML content
+            const adminContent = createAdminContent();
+            
+            // Open new window with admin dashboard
+            adminWindow = window.open('', 'JavaTutorAdmin', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+            
+            if (adminWindow) {
+                adminWindow.document.write(adminContent);
+                adminWindow.document.close();
+                isAdminOpen = true;
+                updateSystemStatus();
+                
+                // Set up communication with admin window
+                adminWindow.addEventListener('load', function() {
+                    // Transfer existing inquiries to admin window
+                    const existingInquiries = JSON.parse(localStorage.getItem('javaTutorInquiries') || '[]');
+                    if (existingInquiries.length > 0) {
+                        adminWindow.postMessage({
+                            type: 'LOAD_INQUIRIES',
+                            inquiries: existingInquiries
+                        }, '*');
+                    }
+                });
+            } else {
+                alert('Please allow pop-ups to access the admin dashboard');
+            }
+        }
+
+        // Check if admin window is still open
+        function checkAdminWindow() {
+            if (adminWindow && adminWindow.closed) {
+                isAdminOpen = false;
+                adminWindow = null;
+                updateSystemStatus();
+            }
+        }
+
+        // Update system status indicator
+        function updateSystemStatus() {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            if (isAdminOpen) {
+                statusDot.classList.remove('offline');
+                statusText.textContent = 'Admin Connected';
+            } else {
+                statusDot.classList.add('offline');
+                statusText.textContent = 'System Online';
+            }
+        }
+
+        // Form submission setup with admin integration
         function setupFormSubmission() {
             const form = document.getElementById('contactForm');
             const formContainer = document.getElementById('formContainer');
@@ -666,10 +824,13 @@
                     email: document.getElementById('email').value,
                     phone: document.getElementById('phone').value,
                     contactMethod: document.getElementById('contactMethod').value,
-                    timestamp: new Date().toLocaleString()
+                    timestamp: new Date().toISOString()
                 };
                 
                 console.log('Form data collected:', formData);
+                
+                // Save to localStorage for admin dashboard
+                saveInquiry(formData);
                 
                 // Simulate form processing
                 setTimeout(function() {
@@ -695,6 +856,45 @@
             });
         }
 
+        // Save inquiry to localStorage and notify admin
+        function saveInquiry(inquiryData) {
+            try {
+                // Create inquiry object with unique ID
+                const inquiry = {
+                    id: Date.now() + Math.random(),
+                    ...inquiryData
+                };
+
+                // Get existing inquiries
+                const existingInquiries = JSON.parse(localStorage.getItem('javaTutorInquiries') || '[]');
+                
+                // Add new inquiry to the beginning of the array
+                existingInquiries.unshift(inquiry);
+                
+                // Save back to localStorage
+                localStorage.setItem('javaTutorInquiries', JSON.stringify(existingInquiries));
+                
+                console.log('Inquiry saved to localStorage:', inquiry);
+                
+                // Notify admin window if it's open
+                if (adminWindow && !adminWindow.closed) {
+                    adminWindow.postMessage({
+                        type: 'NEW_INQUIRY',
+                        inquiry: inquiry
+                    }, '*');
+                }
+                
+                // Trigger storage event for other admin windows
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: 'javaTutorInquiries',
+                    newValue: JSON.stringify(existingInquiries)
+                }));
+                
+            } catch (error) {
+                console.error('Error saving inquiry:', error);
+            }
+        }
+
         // Header scroll effect
         function setupHeaderEffect() {
             const header = document.getElementById('header');
@@ -708,9 +908,28 @@
             });
         }
 
+        // Create admin dashboard content (embedded version)
+        function createAdminContent() {
+            return `${document.querySelector('[data-artifact-id="admin_inbox"]').innerHTML}`;
+        }
+
         // Start everything when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initializeWebsite();
+        });
+
+        // Listen for messages from admin window
+        window.addEventListener('message', function(e) {
+            if (e.data.type === 'ADMIN_READY') {
+                // Admin window is ready, send any existing data
+                const existingInquiries = JSON.parse(localStorage.getItem('javaTutorInquiries') || '[]');
+                if (existingInquiries.length > 0 && e.source) {
+                    e.source.postMessage({
+                        type: 'LOAD_INQUIRIES',
+                        inquiries: existingInquiries
+                    }, '*');
+                }
+            }
         });
     </script>
 </body>
