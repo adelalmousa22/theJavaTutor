@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JavaTutor - Learn Java Programming from Scratch</title>
+    
+    <!-- EmailJS SDK - Correct placement -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -349,6 +353,18 @@
             text-align: center;
             box-shadow: 0 15px 35px rgba(76, 175, 80, 0.3);
             animation: slideInScale 0.5s ease-out;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 0.3s ease;
+        }
+        
+        .form-container {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            padding: 3rem;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            opacity: 1;
+            transform: scale(1);
         }
 
         .thank-you-title {
@@ -482,7 +498,6 @@
         }
     </style>
 </head>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <body>
     <!-- Header -->
     <header class="header" id="header">
@@ -636,9 +651,145 @@
         <span id="statusText">System Online</span>
     </div>
 
-    <!-- EmailJS SDK -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/emailjs-com/3.2.0/email.min.js"></script>
-    <!-- Your JavaScript file -->
-    <script src="script.js"></script>
+    <script>
+        // Initialize EmailJS with your actual public key
+        (function() {
+            emailjs.init("zBHukcu__7lKzZjrJ");
+        })();
+
+        // Navigation and scrolling effects
+        document.addEventListener('DOMContentLoaded', function() {
+            const header = document.getElementById('header');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const heroButton = document.getElementById('heroButton');
+            const consultButton = document.getElementById('consultButton');
+            const contactForm = document.getElementById('contactForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const formContainer = document.getElementById('formContainer');
+            const thankYou = document.getElementById('thankYou');
+            const errorMessage = document.getElementById('errorMessage');
+
+            // Header scroll effect
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 100) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // Smooth scrolling for navigation
+            function scrollToSection(sectionId) {
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    section.scrollIntoView({ 
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }
+
+            // Navigation click handlers
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const sectionId = this.getAttribute('data-section');
+                    scrollToSection(sectionId);
+                });
+            });
+
+            // CTA button handlers
+            heroButton.addEventListener('click', function() {
+                scrollToSection('contact');
+            });
+
+            consultButton.addEventListener('click', function() {
+                scrollToSection('contact');
+            });
+
+            // Form submission with proper error handling
+            contactForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Disable submit button and show loading state
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Sending...';
+                errorMessage.style.display = 'none';
+
+                // Get form data - make sure field names match your EmailJS template
+                const formData = {
+                    from_name: document.getElementById('fullName').value,
+                    from_email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value,
+                    contact_method: document.getElementById('contactMethod').value,
+                    to_name: 'JavaTutor'
+                };
+
+                console.log('Sending form data:', formData); // Debug log
+
+                // Send email using EmailJS with your actual service and template IDs
+                emailjs.send('service_6hhmxqn', 'template_4kt4miw', formData)
+                    .then(function(response) {
+                        console.log('SUCCESS!', response.status, response.text);
+                        
+                        // Hide form and show thank you message with animation
+                        formContainer.style.opacity = '0';
+                        formContainer.style.transform = 'scale(0.9)';
+                        
+                        setTimeout(function() {
+                            formContainer.style.display = 'none';
+                            thankYou.style.display = 'block';
+                            thankYou.style.opacity = '0';
+                            thankYou.style.transform = 'scale(0.9)';
+                            
+                            // Animate thank you message in
+                            setTimeout(function() {
+                                thankYou.style.opacity = '1';
+                                thankYou.style.transform = 'scale(1)';
+                            }, 50);
+                        }, 300);
+                        
+                        // Reset form for future use
+                        contactForm.reset();
+                        
+                        // Reset button state
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Start Learning';
+                    })
+                    .catch(function(error) {
+                        console.log('FAILED...', error);
+                        
+                        // Show error message
+                        errorMessage.style.display = 'block';
+                        
+                        // Re-enable submit button
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Start Learning';
+                        
+                        // Auto-hide error message after 5 seconds
+                        setTimeout(function() {
+                            errorMessage.style.display = 'none';
+                        }, 5000);
+                    });
+            });
+
+            // Status indicator (simulate connection status)
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            // Simulate occasional offline status for realism
+            setInterval(function() {
+                if (Math.random() < 0.05) { // 5% chance of being "offline"
+                    statusDot.classList.add('offline');
+                    statusText.textContent = 'Connecting...';
+                    
+                    setTimeout(function() {
+                        statusDot.classList.remove('offline');
+                        statusText.textContent = 'System Online';
+                    }, 2000);
+                }
+            }, 30000); // Check every 30 seconds
+        });
+    </script>
 </body>
 </html>
