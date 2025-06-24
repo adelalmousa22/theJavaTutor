@@ -378,6 +378,29 @@
             line-height: 1.8;
         }
 
+        /* Error Message */
+        .error-message {
+            display: none;
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            color: white;
+            padding: 4rem;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(244, 67, 54, 0.3);
+            animation: slideInScale 0.5s ease-out;
+        }
+
+        .error-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+
+        .error-text {
+            font-size: 1.3rem;
+            line-height: 1.8;
+        }
+
         /* Status Indicator */
         .status-indicator {
             position: fixed;
@@ -473,7 +496,7 @@
                 padding: 2rem;
             }
 
-            .thank-you {
+            .thank-you, .error-message {
                 padding: 2rem;
             }
 
@@ -590,7 +613,7 @@
                 <div class="contact-section">
                     <div class="form-container" id="formContainer">
                         <h2 class="form-title">Get Started Today!</h2>
-                        <form id="contactForm">
+                        <form id="contactForm" action="https://formspree.io/f/xgveeqad" method="POST">
                             <div class="form-group">
                                 <label for="fullName" class="form-label">Full Name</label>
                                 <input type="text" id="fullName" name="fullName" class="form-input" required>
@@ -616,6 +639,11 @@
                                 </select>
                             </div>
                             
+                            <!-- Hidden field to specify recipient -->
+                            <input type="hidden" name="_to" value="adel.almousa0905@gmail.com">
+                            <input type="hidden" name="_subject" value="New Java Tutoring Inquiry">
+                            <input type="hidden" name="_next" value="javascript:void(0)">
+                            
                             <button type="submit" class="submit-button" id="submitBtn">Start Learning</button>
                         </form>
                     </div>
@@ -623,6 +651,11 @@
                     <div class="thank-you" id="thankYou">
                         <h3 class="thank-you-title">✅ Thank You!</h3>
                         <p class="thank-you-text">Thank you for your interest! I will get back to you as soon as possible to schedule your first Java tutoring session.</p>
+                    </div>
+                    
+                    <div class="error-message" id="errorMessage">
+                        <h3 class="error-title">❌ Oops!</h3>
+                        <p class="error-text">There was an issue sending your message. Please try again or contact me directly at adel.almousa0905@gmail.com</p>
                     </div>
                 </div>
             </section>
@@ -636,10 +669,6 @@
     </div>
 
     <script>
-        // Global variables
-        let adminWindow = null;
-        let isAdminOpen = false;
-
         // Initialize the website
         function initializeWebsite() {
             console.log('Initializing JavaTutor website...');
@@ -647,7 +676,7 @@
             // Set up smooth scrolling for navigation
             setupNavigation();
             
-            // Set up form submission with admin integration
+            // Set up form submission with email integration
             setupFormSubmission();
             
             // Set up header scroll effect
@@ -655,9 +684,6 @@
             
             // Set up CTA buttons
             setupCTAButtons();
-            
-            // Set up admin dashboard integration
-            setupAdminIntegration();
             
             // Update status indicator
             updateSystemStatus();
@@ -716,95 +742,24 @@
             }
         }
 
-        // Admin integration setup
-        function setupAdminIntegration() {
-            const adminLink = document.getElementById('adminLink');
-            
-            if (adminLink) {
-                adminLink.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    openAdminDashboard();
-                });
-            }
-
-            // Listen for admin window closing
-            window.addEventListener('beforeunload', function() {
-                if (adminWindow && !adminWindow.closed) {
-                    adminWindow.close();
-                }
-            });
-
-            // Check if admin window is still open periodically
-            setInterval(checkAdminWindow, 1000);
-        }
-
-        // Open admin dashboard
-        function openAdminDashboard() {
-            if (adminWindow && !adminWindow.closed) {
-                // If admin window is already open, focus on it
-                adminWindow.focus();
-                return;
-            }
-
-            // Create admin dashboard HTML content
-            const adminContent = createAdminContent();
-            
-            // Open new window with admin dashboard
-            adminWindow = window.open('', 'JavaTutorAdmin', 'width=1200,height=800,scrollbars=yes,resizable=yes');
-            
-            if (adminWindow) {
-                adminWindow.document.write(adminContent);
-                adminWindow.document.close();
-                isAdminOpen = true;
-                updateSystemStatus();
-                
-                // Set up communication with admin window
-                adminWindow.addEventListener('load', function() {
-                    // Transfer existing inquiries to admin window
-                    const existingInquiries = JSON.parse(localStorage.getItem('javaTutorInquiries') || '[]');
-                    if (existingInquiries.length > 0) {
-                        adminWindow.postMessage({
-                            type: 'LOAD_INQUIRIES',
-                            inquiries: existingInquiries
-                        }, '*');
-                    }
-                });
-            } else {
-                alert('Please allow pop-ups to access the admin dashboard');
-            }
-        }
-
-        // Check if admin window is still open
-        function checkAdminWindow() {
-            if (adminWindow && adminWindow.closed) {
-                isAdminOpen = false;
-                adminWindow = null;
-                updateSystemStatus();
-            }
-        }
-
         // Update system status indicator
         function updateSystemStatus() {
             const statusDot = document.getElementById('statusDot');
             const statusText = document.getElementById('statusText');
             
-            if (isAdminOpen) {
-                statusDot.classList.remove('offline');
-                statusText.textContent = 'Admin Connected';
-            } else {
-                statusDot.classList.add('offline');
-                statusText.textContent = 'System Online';
-            }
+            statusDot.classList.remove('offline');
+            statusText.textContent = 'Email Ready';
         }
 
-        // Form submission setup with admin integration
+        // Form submission setup with email integration
         function setupFormSubmission() {
             const form = document.getElementById('contactForm');
             const formContainer = document.getElementById('formContainer');
             const thankYou = document.getElementById('thankYou');
+            const errorMessage = document.getElementById('errorMessage');
             const submitBtn = document.getElementById('submitBtn');
             
-            if (!form || !formContainer || !thankYou || !submitBtn) {
+            if (!form || !formContainer || !thankYou || !errorMessage || !submitBtn) {
                 console.error('Form elements not found');
                 return;
             }
@@ -815,32 +770,43 @@
                 
                 // Disable submit button
                 submitBtn.disabled = true;
-                submitBtn.textContent = 'Submitting...';
+                submitBtn.textContent = 'Sending...';
                 
                 // Get form data
-                const formData = {
-                    name: document.getElementById('fullName').value,
-                    email: document.getElementById('email').value,
-                    phone: document.getElementById('phone').value,
-                    contactMethod: document.getElementById('contactMethod').value,
-                    timestamp: new Date().toISOString()
-                };
+                const formData = new FormData(form);
                 
-                console.log('Form data collected:', formData);
+                // Add timestamp to the email
+                const timestamp = new Date().toLocaleString();
+                formData.append('timestamp', timestamp);
                 
-                // Save to localStorage for admin dashboard
-                saveInquiry(formData);
+                console.log('Sending form data to email...');
                 
-                // Simulate form processing
-                setTimeout(function() {
+                // Send form data using fetch
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error('Network response was not ok');
+                    }
+                })
+                .then(data => {
+                    console.log('Email sent successfully:', data);
+                    
                     // Clear form
                     form.reset();
                     
                     // Hide form and show thank you message
                     formContainer.style.display = 'none';
                     thankYou.style.display = 'block';
-                    
-                    console.log('Thank you message displayed');
+                    errorMessage.style.display = 'none';
                     
                     // Reset after 10 seconds
                     setTimeout(function() {
@@ -850,48 +816,25 @@
                         submitBtn.textContent = 'Start Learning';
                         console.log('Form reset and ready for next submission');
                     }, 10000);
+                })
+                .catch(error => {
+                    console.error('Error sending email:', error);
                     
-                }, 1500);
+                    // Hide form and show error message
+                    formContainer.style.display = 'none';
+                    errorMessage.style.display = 'block';
+                    thankYou.style.display = 'none';
+                    
+                    // Reset after 10 seconds
+                    setTimeout(function() {
+                        errorMessage.style.display = 'none';
+                        formContainer.style.display = 'block';
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Start Learning';
+                        console.log('Form reset after error');
+                    }, 10000);
+                });
             });
-        }
-
-        // Save inquiry to localStorage and notify admin
-        function saveInquiry(inquiryData) {
-            try {
-                // Create inquiry object with unique ID
-                const inquiry = {
-                    id: Date.now() + Math.random(),
-                    ...inquiryData
-                };
-
-                // Get existing inquiries
-                const existingInquiries = JSON.parse(localStorage.getItem('javaTutorInquiries') || '[]');
-                
-                // Add new inquiry to the beginning of the array
-                existingInquiries.unshift(inquiry);
-                
-                // Save back to localStorage
-                localStorage.setItem('javaTutorInquiries', JSON.stringify(existingInquiries));
-                
-                console.log('Inquiry saved to localStorage:', inquiry);
-                
-                // Notify admin window if it's open
-                if (adminWindow && !adminWindow.closed) {
-                    adminWindow.postMessage({
-                        type: 'NEW_INQUIRY',
-                        inquiry: inquiry
-                    }, '*');
-                }
-                
-                // Trigger storage event for other admin windows
-                window.dispatchEvent(new StorageEvent('storage', {
-                    key: 'javaTutorInquiries',
-                    newValue: JSON.stringify(existingInquiries)
-                }));
-                
-            } catch (error) {
-                console.error('Error saving inquiry:', error);
-            }
         }
 
         // Header scroll effect
@@ -907,28 +850,9 @@
             });
         }
 
-        // Create admin dashboard content (embedded version)
-        function createAdminContent() {
-            return `${document.querySelector('[data-artifact-id="admin_inbox"]').innerHTML}`;
-        }
-
         // Start everything when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initializeWebsite();
-        });
-
-        // Listen for messages from admin window
-        window.addEventListener('message', function(e) {
-            if (e.data.type === 'ADMIN_READY') {
-                // Admin window is ready, send any existing data
-                const existingInquiries = JSON.parse(localStorage.getItem('javaTutorInquiries') || '[]');
-                if (existingInquiries.length > 0 && e.source) {
-                    e.source.postMessage({
-                        type: 'LOAD_INQUIRIES',
-                        inquiries: existingInquiries
-                    }, '*');
-                }
-            }
         });
     </script>
 </body>
